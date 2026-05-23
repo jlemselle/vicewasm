@@ -1,0 +1,17 @@
+*.out
+*.wasm
+*.m4
+compile
+config.log
+configure
+configure~
+depcomp
+Makefile.in
+missing
+ylwrap
+output.*
+traces.*
+requests
+config.h.in
+INSTALL
+COPYING

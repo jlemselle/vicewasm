@@ -1611,6 +1611,13 @@ bool sound_flush(void)
             break;
         }
 
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+        /* Browsers cannot safely busy-wait for audio buffer space on the main
+           thread. Leave the pending samples queued for a later flush. */
+        nr = 0;
+        break;
+#endif
+
         /* We can't write yet, try again after a minimal sleep. */
         mainlock_yield_and_sleep(tick_per_second() / 1000);
     }

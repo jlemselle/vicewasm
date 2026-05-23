@@ -221,8 +221,14 @@ static int sdl_write(int16_t *pbuf, size_t nr)
         }
 
         if (amount <= 0) {
+#ifdef __EMSCRIPTEN__
+            /* Browsers run the SDL audio backend asynchronously on the main
+               event loop. Blocking here can deadlock rendering and audio. */
+            return 0;
+#else
             SDL_Delay(5);
             continue;
+#endif
         }
 
         memcpy(sdl_buf + sdl_inptr, pbuf + total, (size_t)amount * sizeof(int16_t));
@@ -292,7 +298,11 @@ static const sound_device_t sdl_device =
     sdl_resume,
     1,
     2,
+#ifdef __EMSCRIPTEN__
+    false
+#else
     true
+#endif
 };
 
 int sound_init_sdl_device(void)

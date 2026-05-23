@@ -43,6 +43,10 @@
 #include "vsidui_sdl.h"
 #include "vsyncapi.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "vice_sdl.h"
 
 /* ------------------------------------------------------------------------- */
@@ -123,6 +127,13 @@ void vsyncarch_postsync(void)
         ui_pause_enable();
         pause_pending = 0;
     }
+
+#ifdef __EMSCRIPTEN__
+#ifndef __EMSCRIPTEN_PTHREADS__
+    /* Yield to browser so canvas/event loop can progress each frame. */
+    emscripten_sleep(0);
+#endif
+#endif
 }
 
 void vsyncarch_advance_frame(void)

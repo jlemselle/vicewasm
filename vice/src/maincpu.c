@@ -30,6 +30,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "6510core.h"
 #include "alarm.h"
 #include "archdep.h"
@@ -568,6 +572,9 @@ void maincpu_mainloop(void)
     uint8_t reg_sp = 0;
     uint8_t flag_n = 0;
     uint8_t flag_z = 0;
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+    unsigned int emscripten_yield_counter = 0;
+#endif
 #ifndef NEED_REG_PC
     unsigned int reg_pc;
 #endif
@@ -647,6 +654,13 @@ void maincpu_mainloop(void)
         if (CLK > 246171754) {
             debug.maincpu_traceflg = 1;
         }
+            
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+        if ((++emscripten_yield_counter & 0x3fff) == 0)
+        {
+            emscripten_sleep(0);
+        }
+#endif
 #endif
     }
 }
