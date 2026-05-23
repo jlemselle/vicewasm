@@ -49,6 +49,10 @@
 #include <limits.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "archdep.h"
 #include "cmdline.h"
 #include "debug.h"
@@ -581,7 +585,14 @@ void vsync_do_end_of_line(void)
 
                 /* If we can't rely on the audio device for timing, slow down here. */
                 if (tick_based_sync_timing) {
+#if defined(__EMSCRIPTEN__) && !defined(__EMSCRIPTEN_PTHREADS__)
+                    /* In single-threaded wasm builds, cooperate with the browser
+                       event loop and sleep the requested amount in milliseconds. */
+                    int sleep_ms = (int)TICK_TO_MILLI(ticks_until_target);
+                    emscripten_sleep((sleep_ms > 0) ? sleep_ms : 0);
+#else
                     mainlock_yield_and_sleep(ticks_until_target);
+#endif
                 }
             } else if ((tick_t)0 - ticks_until_target > tick_per_second()) {
                 /* We are more than a second behind, reset sync and accept that we're not running at full speed. */

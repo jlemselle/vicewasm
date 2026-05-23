@@ -60,7 +60,11 @@ bool mainlock_is_vice_thread(void);
 #define mainlock_yield()
 #define mainlock_yield_begin()
 #define mainlock_yield_end()
+#ifdef __EMSCRIPTEN__
+#define mainlock_yield_and_sleep(ticks)
+#else
 #define mainlock_yield_and_sleep(ticks) tick_sleep(ticks)
+#endif
 
 #define mainlock_obtain()
 #define mainlock_release()
