@@ -1,7 +1,22 @@
 set -e  # Exit on error
 set -x  # Log commands being run (optional, remove for production)
 
-./autogen.sh
+"$HOME/emsdk/emsdk" activate
+. "$HOME/emsdk/emsdk_env.sh"
+
+if command -v nproc >/dev/null 2>&1; then
+    make_jobs=$(nproc)
+else
+    make_jobs=$(sysctl -n hw.ncpu 2>/dev/null || echo 1)
+fi
+
+# Recursive autotools rechecks can race under parallel make in this tree.
+# Use a stable default and allow explicit override when needed.
+make_jobs=${WASM_MAKE_JOBS:-1}
+
+if [ "${RUN_AUTOGEN:-0}" = "1" ]; then
+    ./autogen.sh
+fi
 
 # Clear any previous failed attempts
 make distclean || echo "Already clean"
@@ -12,6 +27,7 @@ export CXX=em++
 export AR=emar
 export NM=emnm
 export RANLIB=emranlib
+export YACC='/usr/bin/bison -y'
 
 # emconfigure ./configure 
 #     --host=wasm32-unknown-emscripten 
@@ -54,13 +70,15 @@ emconfigure ./configure \
     --disable-html-docs \
     --disable-external-ffmpeg \
     --disable-ipv6 \
-    CFLAGS="-O3 -s USE_SDL=2" 
-    LDFLAGS="-O3 -s USE_SDL=2 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1"
+    CFLAGS="-O3 -s USE_SDL=2" \
+    LDFLAGS="-O3 -s USE_SDL=2 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1" \
+    SDL2_IMAGE_CFLAGS="-I$HOME/emsdk/upstream/emscripten/cache/sysroot/include/SDL2" \
+    SDL2_IMAGE_LIBS="-s USE_SDL_IMAGE=2 -s USE_ZLIB=1 -s USE_LIBPNG=1"
 
 export NODE_OPTIONS="--max-old-space-size=8192"
 
 
-emmake make -j$(nproc)
+emmake make -j"$make_jobs"
 
 cd src
 
@@ -88,4 +106,5 @@ emcc -O2 -o x64sc.html \
     -s USE_LIBPNG=1 \
     -s ASYNCIFY \
     -s ASSERTIONS=2 \
+    --shell-file x64sc_custom.html \
     --preload-file ../data/C64@/usr/local/share/vice/C64
