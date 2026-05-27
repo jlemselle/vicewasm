@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 set -e  # Exit on error
 
 if [ "${WASM_TRACE:-0}" = "1" ]; then
@@ -25,10 +27,15 @@ make_jobs=${WASM_MAKE_JOBS:-1}
 
 wasm_use_pthreads=${WASM_USE_PTHREADS:-1}
 wasm_pthread_pool_size=${WASM_PTHREAD_POOL_SIZE:-4}
+emscripten_pthread_flags=()
+emscripten_pthread_flags_str=""
 if [ "$wasm_use_pthreads" = "1" ]; then
-    emscripten_pthread_flags="-pthread -sPTHREAD_POOL_SIZE=$wasm_pthread_pool_size"
-else
-    emscripten_pthread_flags=""
+    if ! [[ "$wasm_pthread_pool_size" =~ ^[0-9]+$ ]]; then
+        echo "Error: WASM_PTHREAD_POOL_SIZE must be a non-negative integer"
+        exit 1
+    fi
+    emscripten_pthread_flags=(-pthread "-sPTHREAD_POOL_SIZE=${wasm_pthread_pool_size}")
+    emscripten_pthread_flags_str="${emscripten_pthread_flags[*]}"
 fi
 
 if [ "${RUN_AUTOGEN:-0}" = "1" ]; then
@@ -93,8 +100,8 @@ emconfigure ./configure \
     --disable-html-docs \
     --disable-external-ffmpeg \
     --disable-ipv6 \
-    CFLAGS="-O3 -s USE_SDL=2 $emscripten_pthread_flags" \
-    LDFLAGS="-O3 -s USE_SDL=2 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 $emscripten_pthread_flags" \
+    CFLAGS="-O3 -s USE_SDL=2 $emscripten_pthread_flags_str" \
+    LDFLAGS="-O3 -s USE_SDL=2 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 $emscripten_pthread_flags_str" \
     SDL2_IMAGE_CFLAGS="-I$HOME/emsdk/upstream/emscripten/cache/sysroot/include/SDL2" \
     SDL2_IMAGE_LIBS="-s USE_SDL_IMAGE=2 -s USE_ZLIB=1 -s USE_LIBPNG=1"
 
@@ -140,7 +147,7 @@ emcc -O2 -o x64.html \
   -s USE_ZLIB=1 \
   -s USE_LIBPNG=1 \
   -s ASYNCIFY \
-  $emscripten_pthread_flags \
+  "${emscripten_pthread_flags[@]}" \
   --shell-file x64sc_custom.html \
   --preload-file ../data/C64@/usr/local/share/vice/C64 \
   --preload-file ../data/DRIVES@/usr/local/share/vice/DRIVES
