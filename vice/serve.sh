@@ -7,6 +7,7 @@ set -e
 # Configuration
 PORT=${1:-8000}
 SRC_DIR="./src"
+PYTHON_BIN=${PYTHON_BIN:-python3}
 
 # Check if src directory exists
 if [ ! -d "$SRC_DIR" ]; then
@@ -30,8 +31,34 @@ cd "$SRC_DIR"
 echo "Copying x64.html to index.html..."
 cp x64.html index.html
 
-# Use Python's built-in HTTP server
-python3 -m http.server $PORT &
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    echo "Error: $PYTHON_BIN is required to run the HTTP server"
+    exit 1
+fi
+
+# Serve with COOP/COEP headers required for Emscripten pthreads.
+"$PYTHON_BIN" - "$PORT" <<'PY' &
+import http.server
+import sys
+
+port = int(sys.argv[1])
+
+
+class WasmPthreadsHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Cross-Origin-Embedder-Policy", "require-corp")
+        self.send_header("Cross-Origin-Resource-Policy", "cross-origin")
+        super().end_headers()
+
+    def guess_type(self, path):
+        if path.endswith(".wasm"):
+            return "application/wasm"
+        return super().guess_type(path)
+
+
+http.server.ThreadingHTTPServer(("", port), WasmPthreadsHandler).serve_forever()
+PY
 SERVER_PID=$!
 
 # Give the server a moment to start

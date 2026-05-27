@@ -4,8 +4,14 @@ if [ "${WASM_TRACE:-0}" = "1" ]; then
     set -x  # Log commands when explicitly requested
 fi
 
-"$HOME/emsdk/emsdk" activate
-. "$HOME/emsdk/emsdk_env.sh"
+EMSDK_DIR=${EMSDK_DIR:-"$HOME/emsdk"}
+if [ -x "$EMSDK_DIR/emsdk" ]; then
+    "$EMSDK_DIR/emsdk" activate
+    . "$EMSDK_DIR/emsdk_env.sh"
+elif ! command -v emcc >/dev/null 2>&1 || ! command -v emconfigure >/dev/null 2>&1 || ! command -v emmake >/dev/null 2>&1; then
+    echo "Error: Emscripten tools not found. Install emsdk or set EMSDK_DIR."
+    exit 1
+fi
 
 if command -v nproc >/dev/null 2>&1; then
     make_jobs=$(nproc)
@@ -16,6 +22,14 @@ fi
 # Recursive autotools rechecks can race under parallel make in this tree.
 # Use a stable default and allow explicit override when needed.
 make_jobs=${WASM_MAKE_JOBS:-1}
+
+wasm_use_pthreads=${WASM_USE_PTHREADS:-1}
+wasm_pthread_pool_size=${WASM_PTHREAD_POOL_SIZE:-4}
+if [ "$wasm_use_pthreads" = "1" ]; then
+    emscripten_pthread_flags="-pthread -sPTHREAD_POOL_SIZE=$wasm_pthread_pool_size"
+else
+    emscripten_pthread_flags=""
+fi
 
 if [ "${RUN_AUTOGEN:-0}" = "1" ]; then
     ./autogen.sh
@@ -79,8 +93,8 @@ emconfigure ./configure \
     --disable-html-docs \
     --disable-external-ffmpeg \
     --disable-ipv6 \
-    CFLAGS="-O3 -s USE_SDL=2" \
-    LDFLAGS="-O3 -s USE_SDL=2 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1" \
+    CFLAGS="-O3 -s USE_SDL=2 $emscripten_pthread_flags" \
+    LDFLAGS="-O3 -s USE_SDL=2 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 $emscripten_pthread_flags" \
     SDL2_IMAGE_CFLAGS="-I$HOME/emsdk/upstream/emscripten/cache/sysroot/include/SDL2" \
     SDL2_IMAGE_LIBS="-s USE_SDL_IMAGE=2 -s USE_ZLIB=1 -s USE_LIBPNG=1"
 
@@ -126,6 +140,7 @@ emcc -O2 -o x64.html \
   -s USE_ZLIB=1 \
   -s USE_LIBPNG=1 \
   -s ASYNCIFY \
+  $emscripten_pthread_flags \
   --shell-file x64sc_custom.html \
   --preload-file ../data/C64@/usr/local/share/vice/C64 \
   --preload-file ../data/DRIVES@/usr/local/share/vice/DRIVES
