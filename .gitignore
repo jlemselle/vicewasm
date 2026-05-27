@@ -1,20 +1,116 @@
+# C/C++ build products
+*.o
+*.obj
+*.lo
+*.la
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
 *.out
-*.wasm
-*.m4
+
+# Dependency and coverage byproducts
+*.d
+*.gcda
+*.gcno
+*.gcov
+
+# Autotools / configure generated files
+aclocal.m4
+autom4te.cache/
 compile
+config.guess
 config.log
+config.rpath
+config.status
+config.sub
 configure
 configure~
 depcomp
-Makefile.in
+install-sh
+libtool
 missing
+mkinstalldirs
 ylwrap
+Makefile
+Makefile.in
+
+# CMake / generic build metadata
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# Emscripten outputs and cache
+*.wasm
+*.wasm.map
+*.data
+*.symbols
+*.worker.js
+*.js.mem
+.emscripten
+.emscripten_cache/
+.emscripten_ports/
+
+# Local wasm script outputs
 output.*
 traces.*
 requests
-config.h.in
-INSTALL
-COPYING
-*.o
-*.a
-Makefile
+
+# Configure test artifacts
+vice/confdefs.h
+vice/conftest.c
+vice/conftest.err
+
+# Generated headers/scripts from configure in src/
+vice/src/config.h
+vice/src/config.h.in
+vice/src/debug.h
+vice/src/infocontrib.h
+vice/src/stamp-h1
+vice/src/version.h
+vice/src/vice-version.sh
+
+# Generated license/install copies in SID libs
+vice/src/resid/COPYING
+vice/src/resid/INSTALL
+vice/src/resid-dtv/COPYING
+vice/src/resid-dtv/INSTALL
+
+# VICE emulator/tool binaries generated in src/
+vice/src/vsid
+vice/src/x64
+vice/src/x64sc
+vice/src/x64dtv
+vice/src/xscpu64
+vice/src/x128
+vice/src/xvic
+vice/src/xpet
+vice/src/xplus4
+vice/src/xcbm2
+vice/src/xcbm5x0
+vice/src/c1541
+vice/src/tools/cartconv
+vice/src/tools/petcat
+
+# wasm/web output files produced by buildwasm.sh
+vice/src/x64sc.html
+vice/src/x64sc.js
+vice/src/x64sc.wasm
+vice/src/x64sc.data
+vice/src/x64.html
+vice/src/x64.js
+vice/src/x64.wasm
+vice/src/x64.data
+vice/src/*.map
+vice/src/index.html
+
+# other generated files in src/
+*.o65
+vice/src/c64/psiddrv.h
+vice/src/monitor/mon_lex.c
+vice/src/monitor/mon_parse.h
+vice/src/monitor/mon_parse.c
+vice/src/arch/shared/hotkeys/keysymtable.h
