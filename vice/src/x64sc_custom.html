@@ -64,20 +64,6 @@
         false,
       );
 
-      // Keep keyboard focus on canvas and translate browser arrow keys to
-      // menu keys known to work in this wasm build.
-      var arrowToMenu = {
-        ArrowUp: { key: "PageUp", code: "PageUp", keyCode: 33, which: 33 },
-        ArrowDown: {
-          key: "PageDown",
-          code: "PageDown",
-          keyCode: 34,
-          which: 34,
-        },
-        ArrowLeft: { key: "Home", code: "Home", keyCode: 36, which: 36 },
-        ArrowRight: { key: "End", code: "End", keyCode: 35, which: 35 },
-      };
-
       function focusCanvas() {
         if (document.activeElement !== canvasElement) {
           canvasElement.focus();
@@ -86,63 +72,6 @@
 
       window.addEventListener("load", focusCanvas);
       canvasElement.addEventListener("click", focusCanvas);
-
-      function dispatchSyntheticMenuEvent(type, mapping, srcEvent) {
-        var init = {
-          key: mapping.key,
-          code: mapping.code,
-          keyCode: mapping.keyCode,
-          which: mapping.which,
-          bubbles: true,
-          cancelable: true,
-          repeat: srcEvent.repeat,
-          ctrlKey: srcEvent.ctrlKey,
-          shiftKey: srcEvent.shiftKey,
-          altKey: srcEvent.altKey,
-          metaKey: srcEvent.metaKey,
-        };
-
-        var target = document.activeElement || canvasElement;
-
-        try {
-          target.dispatchEvent(new KeyboardEvent(type, init));
-        } catch (err) {
-          // Fallback for older KeyboardEvent implementations.
-          var legacy = document.createEvent("KeyboardEvent");
-          legacy.initEvent(type, true, true);
-          legacy.keyCode = mapping.keyCode;
-          legacy.which = mapping.which;
-          target.dispatchEvent(legacy);
-        }
-      }
-
-      window.addEventListener(
-        "keydown",
-        function (e) {
-          var mapping = arrowToMenu[e.key];
-          if (!mapping) {
-            return;
-          }
-          e.preventDefault();
-          focusCanvas();
-          dispatchSyntheticMenuEvent("keydown", mapping, e);
-        },
-        { capture: true },
-      );
-
-      window.addEventListener(
-        "keyup",
-        function (e) {
-          var mapping = arrowToMenu[e.key];
-          if (!mapping) {
-            return;
-          }
-          e.preventDefault();
-          focusCanvas();
-          dispatchSyntheticMenuEvent("keyup", mapping, e);
-        },
-        { capture: true },
-      );
 
       var Module = {
         print: function () {

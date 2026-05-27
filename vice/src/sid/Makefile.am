@@ -6,6 +6,14 @@ resid_libadd =
 resid_dtv_libadd =
 endif
 
+if HAVE_RESIDFP
+residfp_sources = \
+	residfp.cc \
+	residfp.h
+else
+residfp_sources =
+endif
+
 SUFFIXES = .def
 
 AM_CPPFLAGS = \
@@ -35,8 +43,6 @@ libsid_a_SOURCES = \
 	hardsid.c \
 	parsid.c \
 	usbsid.c \
-	residfp.cc \
-	residfp.h \
 	sid-cmdline-options.c \
 	sid-cmdline-options.h \
 	sid-resources.c \
@@ -46,7 +52,8 @@ libsid_a_SOURCES = \
 	sid.c \
 	sid.h \
 	wave6581.h \
-	wave8580.h
+	wave8580.h \
+	$(residfp_sources)
 
 EXTRA_libsid_a_SOURCES = \
 	resid.cc \
